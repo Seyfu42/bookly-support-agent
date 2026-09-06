@@ -9,3 +9,4 @@ dist/
 build/
 .claude/
 deck/preview.html
+bookly_sessions.db*

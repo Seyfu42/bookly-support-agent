@@ -14,7 +14,7 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
 
-from bookly import config
+from bookly import config, store
 from bookly.agent import run_turn
 from bookly.session import get_session
 
@@ -34,7 +34,30 @@ def index() -> FileResponse:
 
 @app.get("/api/config")
 def get_config() -> dict:
-    return {"mock_mode": config.MOCK_MODE, "model": None if config.MOCK_MODE else config.MODEL}
+    return {
+        "mock_mode": config.MOCK_MODE,
+        "model": None if config.MOCK_MODE else config.MODEL,
+        "storage": store.stats(),
+    }
+
+
+@app.get("/api/session/{session_id}")
+def get_session_transcript(session_id: str) -> dict:
+    """Rehydrate a conversation after a reload, a crash, or a new device.
+
+    Returns what the customer saw, not the model's transcript -- tool calls and
+    thinking blocks are not theirs to read.
+    """
+    payload = store.load(session_id)
+    if payload is None:
+        return {"found": False, "transcript": [], "trace": []}
+    return {
+        "found": True,
+        "session_id": session_id,
+        "transcript": payload.get("transcript", []),
+        "trace": payload.get("trace", []),
+        "turn_count": payload.get("turn_count", 0),
+    }
 
 
 @app.post("/api/chat")

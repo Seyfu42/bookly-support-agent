@@ -31,6 +31,7 @@ YES_WORDS = ("yes", "yep", "yeah", "sure", "please do", "go ahead", "confirm", "
 def _say(session: Session, text: str) -> dict:
     session.messages.append({"role": "assistant", "content": text})
     session.log("assistant", text)
+    session.say("bot", text)
     return {"type": "reply", "text": text}
 
 

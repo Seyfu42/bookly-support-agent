@@ -25,6 +25,7 @@ Everything below follows from that.
 | Is this caller who they claim? | **The tool layer** | `bookly/tools.py` |
 | May this refund go through? | **Preconditions in code** | `bookly/tools.py` |
 | How do we say it kindly? | The model | `bookly/prompts.py` |
+| Where does the conversation live? | SQLite, not memory | `bookly/store.py` |
 
 An LLM asked *"can I return a book I received 45 days ago?"* is under real
 pressure to be agreeable. It will find a reason to say yes. Moving that decision
@@ -95,6 +96,24 @@ Test data lives in `bookly/data.py`. Every order exists to make one branch of th
 policy reachable.
 
 ---
+
+## Conversations survive a restart
+
+Sessions are stored in SQLite (`bookly_sessions.db`), not held in memory. Reload
+the page, restart the server, come back tomorrow — the conversation is still
+there, and the agent still knows which order you were discussing.
+
+SQLite is a deliberate choice over Redis or Postgres. `bookly/store.py` is a
+narrow interface — `load`, `save`, `delete`, `stats` — so swapping the backend is
+an afternoon's work. But SQLite ships inside Python, so a reviewer gets a
+persistent agent from `git clone` with no server to install.
+
+The part worth reading is `Session.to_payload()` / `from_payload()` in
+`bookly/session.py`. Persistence is written by hand rather than by pickling,
+because `verified_orders` is a security boundary: it round-trips through an
+explicit schema where you can see exactly what is restored. `tests/test_persistence.py`
+asserts that a restored session neither invents verification it never had, nor
+loses an eligibility check it did.
 
 ## Architecture
 

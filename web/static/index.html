@@ -45,7 +45,7 @@
   h1 { font-size: 15px; margin: 0; font-weight: 600; letter-spacing: -0.01em; }
   .sub { font-size: 12.5px; color: var(--muted); }
   .badge {
-    margin-left: auto; font-size: 11.5px; letter-spacing: .04em;
+    margin-left: 10px; font-size: 11.5px; letter-spacing: .04em;
     text-transform: uppercase; padding: 4px 10px; border-radius: 999px;
     background: var(--accent-soft); color: var(--accent); font-weight: 600;
   }
@@ -83,6 +83,16 @@
     background: var(--accent); color: #fff; font: inherit; font-weight: 600; cursor: pointer;
   }
   button:disabled { opacity: .45; cursor: default; }
+  .ghost {
+    margin-left: auto; background: transparent; color: var(--muted);
+    border: 1px solid var(--line); font-size: 12.5px; padding: 6px 12px; font-weight: 500;
+  }
+  .ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .restored {
+    align-self: center; font-size: 12px; color: var(--muted);
+    background: var(--panel); border: 1px solid var(--line);
+    padding: 5px 12px; border-radius: 999px;
+  }
 
   /* --- trace --- */
   .trace { background: var(--trace-bg); color: var(--trace-ink); display: flex; flex-direction: column; min-height: 0; }
@@ -111,6 +121,7 @@
     <h1>Bookly Support</h1>
     <div class="sub">AI agent · order status, returns &amp; refunds</div>
   </div>
+  <button id="newchat" class="ghost" title="Start a fresh conversation">New conversation</button>
   <div class="badge" id="badge">connecting…</div>
 </header>
 
@@ -232,7 +243,10 @@ form.onsubmit = async (e) => {
         if (!part.startsWith('data: ')) continue;
         const ev = JSON.parse(part.slice(6));
 
-        if (ev.type === 'session') sessionId = ev.session_id;
+        if (ev.type === 'session') {
+          sessionId = ev.session_id;
+          try { localStorage.setItem('bookly_session', sessionId); } catch (e) {}
+        }
         else if (ev.type === 'tool_call') traceStep('call', ev.name, ev.args);
         else if (ev.type === 'tool_result') {
           const denied = ev.result && (ev.result.error || ev.result.eligible === false || ev.result.success === false);
@@ -262,8 +276,48 @@ input.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
 });
 
-bubble("Hi! I'm the Bookly support assistant. I can check an order, help with a return, or answer questions about shipping and our policies. What can I do for you?", 'bot');
-input.focus();
+const GREETING = "Hi! I'm the Bookly support assistant. I can check an order, help with a return, or answer questions about shipping and our policies. What can I do for you?";
+
+document.getElementById('newchat').onclick = () => {
+  try { localStorage.removeItem('bookly_session'); } catch (e) {}
+  location.reload();
+};
+
+// Conversations live in SQLite, not in this tab. Reload, crash, or come back
+// tomorrow — the agent picks up where you left off.
+async function restore() {
+  let saved = null;
+  try { saved = localStorage.getItem('bookly_session'); } catch (e) {}
+  if (!saved) { bubble(GREETING, 'bot'); input.focus(); return; }
+
+  try {
+    const res = await fetch('/api/session/' + encodeURIComponent(saved));
+    const data = await res.json();
+    if (!data.found || !data.transcript.length) { bubble(GREETING, 'bot'); input.focus(); return; }
+
+    sessionId = data.session_id;
+    bubble(GREETING, 'bot');
+    data.transcript.forEach(m => bubble(m.text, m.role === 'user' ? 'you' : 'bot'));
+
+    data.trace.forEach(t => {
+      if (t.kind === 'tool_call') traceStep('call', t.label, t.detail);
+      else if (t.kind === 'tool_result') {
+        const d = t.detail || {};
+        traceStep('res', t.label, d, d.error || d.eligible === false || d.success === false);
+      }
+    });
+
+    const note = document.createElement('div');
+    note.className = 'restored';
+    note.textContent = `↻ restored from storage · ${data.turn_count} turn${data.turn_count === 1 ? '' : 's'}`;
+    log.appendChild(note);
+    log.scrollTop = log.scrollHeight;
+  } catch (e) {
+    bubble(GREETING, 'bot');
+  }
+  input.focus();
+}
+restore();
 </script>
 </body>
 </html>

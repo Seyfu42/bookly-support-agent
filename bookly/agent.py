@@ -53,17 +53,22 @@ def run_turn(session: Session, user_text: str) -> Iterator[dict]:
     """Run one user turn to completion, yielding observable events."""
     session.turn_count += 1
     session.messages.append({"role": "user", "content": user_text})
+    session.say("user", user_text)
 
     if config.MOCK_MODE:
         from bookly.mock_llm import run_turn_mock
 
-        yield from run_turn_mock(session, user_text)
+        try:
+            yield from run_turn_mock(session, user_text)
+        finally:
+            session.persist()
         return
 
     for iteration in range(config.MAX_TOOL_ITERATIONS):
         try:
             response = _call_model(session)
         except anthropic.AuthenticationError:
+            session.persist()
             yield {
                 "type": "error",
                 "message": (
@@ -73,26 +78,34 @@ def run_turn(session: Session, user_text: str) -> Iterator[dict]:
             }
             return
         except anthropic.RateLimitError:
+            session.persist()
             yield {"type": "error", "message": "Rate limited by the API. Try again in a moment."}
             return
         except anthropic.APIStatusError as exc:
+            session.persist()
             yield {"type": "error", "message": f"API error {exc.status_code}: {exc.message}"}
             return
         except anthropic.APIConnectionError:
+            session.persist()
             yield {"type": "error", "message": "Could not reach the Anthropic API. Check your connection."}
             return
 
-        session.messages.append({"role": "assistant", "content": response.content})
+        session.messages.append(
+            {"role": "assistant", "content": [b.model_dump(exclude_none=True) for b in response.content]}
+        )
 
         if response.stop_reason != "tool_use":
             reply = _text_of(response) or "Sorry, I lost my train of thought there. Could you say that again?"
             session.log("assistant", reply)
+            session.say("bot", reply)
+            session.persist()
             yield {"type": "reply", "text": reply}
             return
 
         # The model may narrate before acting; show that text so the customer
         # is not staring at a silent screen while tools run.
         if preamble := _text_of(response):
+            session.say("bot", preamble)
             yield {"type": "partial", "text": preamble}
 
         tool_results = []
@@ -120,6 +133,7 @@ def run_turn(session: Session, user_text: str) -> Iterator[dict]:
         # All results from one assistant turn go back in a single user message.
         session.messages.append({"role": "user", "content": tool_results})
 
+    session.persist()
     yield {
         "type": "error",
         "message": (
