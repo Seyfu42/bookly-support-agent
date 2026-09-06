@@ -199,18 +199,34 @@ function renderChips() {
   input.placeholder = PLACEHOLDER[lang];
 }
 
+function applyLanguage(next, { fromAgent = false } = {}) {
+  if (next !== 'en' && next !== 'de') return;
+  lang = next;
+  document.querySelectorAll('#langs button').forEach(
+    b => b.classList.toggle('on', b.dataset.lang === next)
+  );
+  renderChips();
+  try { localStorage.setItem('bookly_lang', next); } catch (e) {}
+  if (fromAgent) {
+    const note = document.createElement('div');
+    note.className = 'restored';
+    note.textContent = next === 'de'
+      ? '🌐 Der Agent hat auf Deutsch umgestellt'
+      : '🌐 the agent switched to English';
+    log.appendChild(note);
+    log.scrollTop = log.scrollHeight;
+  }
+}
+
 document.querySelectorAll('#langs button').forEach(btn => {
   btn.onclick = () => {
-    lang = btn.dataset.lang;
-    document.querySelectorAll('#langs button').forEach(b => b.classList.toggle('on', b === btn));
-    renderChips();
+    applyLanguage(btn.dataset.lang);
     // Only restyle the greeting while nothing has been said yet — never rewrite
     // a conversation that already happened.
     const bubbles = log.querySelectorAll('.msg');
     if (bubbles.length === 1 && bubbles[0].classList.contains('bot')) {
       bubbles[0].textContent = GREETING[lang];
     }
-    try { localStorage.setItem('bookly_lang', lang); } catch (e) {}
   };
 });
 
@@ -300,6 +316,7 @@ form.onsubmit = async (e) => {
           sessionId = ev.session_id;
           try { localStorage.setItem('bookly_session', sessionId); } catch (e) {}
         }
+        else if (ev.type === 'language') applyLanguage(ev.language, { fromAgent: true });
         else if (ev.type === 'tool_call') traceStep('call', ev.name, ev.args);
         else if (ev.type === 'tool_result') {
           const denied = ev.result && (ev.result.error || ev.result.eligible === false || ev.result.success === false);

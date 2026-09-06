@@ -98,6 +98,10 @@ LINES = {
         "en": "{body}\n\n(From our help centre: {title}, {id})",
         "de": "{body}\n\n(Aus unserem Hilfebereich: {title}, {id})",
     },
+    "switched": {
+        "en": "Of course — I'll continue in English. How can I help?",
+        "de": "Sehr gerne — ich mache auf Deutsch weiter. Wie kann ich Ihnen helfen?",
+    },
     "no_article": {
         "en": "I don't have anything on that in the help centre, and I'd rather not guess. Would you like me to put you through to a colleague?",
         "de": "Dazu finde ich nichts im Hilfebereich, und ich möchte nicht raten. Soll ich Sie mit einer Kollegin oder einem Kollegen verbinden?",
@@ -119,6 +123,15 @@ REASONS = {
     "ALREADY_REFUNDED": {
         "de": "Bestellung {order_id} wurde bereits erstattet.",
     },
+}
+
+
+LANGUAGE_REQUESTS = {
+    "de": ("auf deutsch", "in deutsch", "sprich deutsch", "sprechen sie deutsch",
+           "kannst du deutsch", "können sie deutsch", "in german", "speak german",
+           "switch to german", "german please"),
+    "en": ("in english", "auf englisch", "speak english", "switch to english",
+           "english please"),
 }
 
 
@@ -165,6 +178,14 @@ def run_turn_mock(session: Session, user_text: str) -> Iterator[dict]:
         sc["order_id"] = m.group(1).upper().replace(" ", "-")
     if m := EMAIL_RE.search(user_text):
         sc["email"] = m.group(0).lower()
+
+    # Explicit language switch, so the offline planner behaves like the real
+    # agent rather than ignoring the request.
+    for code, phrases in LANGUAGE_REQUESTS.items():
+        if any(ph in text for ph in phrases) and session.language != code:
+            yield from _call(session, "set_language", {"language": code})
+            yield _say(session, _t(session, "switched"))
+            return
 
     if any(w in text for w in HUMAN_WORDS):
         yield from _call(session, "escalate_to_human", {

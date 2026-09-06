@@ -117,6 +117,29 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
         },
     },
     {
+        "name": "set_language",
+        "description": (
+            "Switch this conversation to another language. Call it when the "
+            "customer asks you to, or writes to you in a language you support. "
+            "Supported: 'en' (English, the default) and 'de' (German). Call it "
+            "once, then simply continue in that language -- do not announce the "
+            "tool, just answer naturally."
+        ),
+        "strict": True,
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "language": {
+                    "type": "string",
+                    "enum": ["en", "de"],
+                    "description": "Language code to switch this conversation to.",
+                }
+            },
+            "required": ["language"],
+            "additionalProperties": False,
+        },
+    },
+    {
         "name": "escalate_to_human",
         "description": (
             "Hand the conversation to a human agent. Use when the customer asks "
@@ -271,6 +294,36 @@ def _issue_refund(args: dict, session) -> dict:
     return {"success": True, "already_refunded": False, **record}
 
 
+def _set_language(args: dict, session) -> dict:
+    """Change the conversation's language.
+
+    The model asks; the application decides. An unsupported code is refused
+    rather than accepted and half-honoured -- the same pattern as every other
+    tool here. Note what this cannot do: it changes how answers are worded, and
+    nothing else. policy.py is not reachable from this function.
+    """
+    from bookly import config
+
+    requested = (args.get("language") or "").strip().lower()
+    if requested not in config.SUPPORTED_LANGUAGES:
+        return {
+            "success": False,
+            "error": (
+                f"'{requested}' is not supported. Available: "
+                f"{', '.join(config.SUPPORTED_LANGUAGES)}. Tell the customer "
+                "which languages you can offer."
+            ),
+        }
+
+    previous, session.language = session.language, requested
+    return {
+        "success": True,
+        "language": requested,
+        "previous": previous,
+        "note": "Reply in this language from now on. Policy decisions are unaffected.",
+    }
+
+
 def _escalate_to_human(args: dict, session) -> dict:
     session.escalated = True
     return {
@@ -287,6 +340,7 @@ _HANDLERS = {
     "search_help_center": _search_help_center,
     "check_return_eligibility": _check_return_eligibility,
     "issue_refund": _issue_refund,
+    "set_language": _set_language,
     "escalate_to_human": _escalate_to_human,
 }
 

@@ -72,8 +72,17 @@ def chat(req: ChatRequest) -> StreamingResponse:
 
     def stream():
         yield f"data: {json.dumps({'type': 'session', 'session_id': session.session_id})}\n\n"
+
+        # The agent can switch language mid-turn via the set_language tool. Tell
+        # the client when that happens, so its toggle reflects reality and its
+        # next request does not silently switch the conversation back.
+        seen_language = session.language
         for event in run_turn(session, req.message):
             yield f"data: {json.dumps(event, default=str)}\n\n"
+            if session.language != seen_language:
+                seen_language = session.language
+                yield f"data: {json.dumps({'type': 'language', 'language': seen_language})}\n\n"
+
         yield f"data: {json.dumps({'type': 'done'})}\n\n"
 
     return StreamingResponse(

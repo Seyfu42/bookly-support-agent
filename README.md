@@ -130,9 +130,20 @@ loses an eligibility check it did.
 
 ## German is a toggle, not a rewrite
 
-English is the default and is unchanged. The `EN | DE` switch in the header moves
-a single conversation to German; the choice persists with the session. There is
-also a `BOOKLY_LANGUAGE` environment variable.
+English is the default and is unchanged. There are two ways to switch:
+
+- **The `EN | DE` toggle** in the header.
+- **Just ask.** "Können Sie mir auf Deutsch helfen?" — or simply write in German
+  — and the agent calls the `set_language` tool itself. The UI toggle follows,
+  so the header always reflects what the conversation is actually doing.
+
+Either way the choice persists with the session and survives a restart. There is
+also a `BOOKLY_LANGUAGE` environment variable for the default.
+
+Switching is a **tool**, not a prompt instruction, for the same reason the refund
+gate is: the model asks, the application decides. Ask for French and
+`set_language` refuses — the model cannot grant itself a language the system
+does not have, and `tests/test_language.py` pins that down.
 
 What matters is what German *doesn't* touch. **`policy.py` has never heard of
 it.** The policy engine returns a machine-readable `reason_code`; turning that

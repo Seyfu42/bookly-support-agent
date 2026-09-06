@@ -77,8 +77,14 @@ This is the strongest moment in the video. Don't rush it.
 
 **3 · The same thing in German (~20s)**
 
-Click **DE**, then click the chip:
-`Ich möchte eine Erstattung für BK-1002, ada.lovelace@example.com`
+Don't touch the toggle — **just ask it**:
+
+Type: `Hallo, können Sie mir auf Deutsch helfen?`
+
+> *"I haven't clicked anything. It called a tool to switch, and the toggle up
+> here followed it."*
+
+Then: `Ich möchte eine Erstattung für BK-1002, ada.lovelace@example.com`
 
 > *"Same order, German. And look at the trace panel — the customer-facing text
 > changed, but the reason code is still OUTSIDE_RETURN_WINDOW in English. The
