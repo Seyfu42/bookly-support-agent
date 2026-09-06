@@ -10,3 +10,6 @@ build/
 .claude/
 deck/preview.html
 bookly_sessions.db*
+
+# Personal recording script — kept local, not shared
+DEMO.md
