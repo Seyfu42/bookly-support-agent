@@ -172,9 +172,8 @@ _COLY, _COLH = 2.62, 2.72
 S4 = {
     "bg": CREAM,
     "notes": (
-        "SAY: \"Same customer, same order, two languages. On the left English, on "
-        "the right German — and the agent is genuinely answering in German, not "
-        "translating a script.\"\n\n"
+        "SAY: \"Same customer, same order, two languages. Nobody clicked a "
+        "setting — the customer asked in German and the agent switched itself.\"\n\n"
         "\"Look at the bottom. That is one tool result, shared by both. "
         "policy.py has never heard of German — it returns a code, and the code is "
         "the same code. Language changes the wording. It cannot touch the "
@@ -186,7 +185,7 @@ S4 = {
     "el": [
         headline("Same refusal. Two languages.", size=40, h=1.0),
         text(M, 2.05, 11.43, 0.45,
-             "Real replies from the running agent. English is the default; German is a toggle.",
+             "Real replies from the running agent. English is the default — the customer just asked for German.",
              size=17, color=MUTED),
 
         # --- English ---------------------------------------------------------
