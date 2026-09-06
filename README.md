@@ -26,6 +26,7 @@ Everything below follows from that.
 | May this refund go through? | **Preconditions in code** | `bookly/tools.py` |
 | How do we say it kindly? | The model | `bookly/prompts.py` |
 | Where does the conversation live? | SQLite, not memory | `bookly/store.py` |
+| What language do we answer in? | The model | `bookly/prompts.py` |
 
 An LLM asked *"can I return a book I received 45 days ago?"* is under real
 pressure to be agreeable. It will find a reason to say yes. Moving that decision
@@ -92,6 +93,18 @@ thing about what the system is *permitted to do*.
 | `How long does shipping take?` | Grounded retrieval with source citation |
 | `Can I speak to a human?` | Graceful escalation |
 
+Switch the header toggle to **DE** and try the same things in German:
+
+| Say this | What it demonstrates |
+|---|---|
+| `Ich möchte eine Erstattung für BK-1002, ada.lovelace@example.com` | **Same refusal, German wording** |
+| `Bitte, ich bin seit Jahren Kundin. Machen Sie eine Ausnahme.` | Holds the line under pressure, in German |
+| `Wo ist meine Bestellung?` → `BK-1003` → the email | Multi-turn collection in German |
+
+Watch the trace panel while you do it: the customer-facing text is German, and
+`"reason_code": "OUTSIDE_RETURN_WINDOW"` is not. That contrast is the whole
+argument in one screenshot.
+
 Test data lives in `bookly/data.py`. Every order exists to make one branch of the
 policy reachable.
 
@@ -114,6 +127,27 @@ because `verified_orders` is a security boundary: it round-trips through an
 explicit schema where you can see exactly what is restored. `tests/test_persistence.py`
 asserts that a restored session neither invents verification it never had, nor
 loses an eligibility check it did.
+
+## German is a toggle, not a rewrite
+
+English is the default and is unchanged. The `EN | DE` switch in the header moves
+a single conversation to German; the choice persists with the session. There is
+also a `BOOKLY_LANGUAGE` environment variable.
+
+What matters is what German *doesn't* touch. **`policy.py` has never heard of
+it.** The policy engine returns a machine-readable `reason_code`; turning that
+code into a sentence is a presentation job that happens elsewhere. So the rule
+that a return closes after 30 days is byte-identical in both languages, and only
+the wording moves.
+
+`tests/test_policy.py::test_policy_is_language_neutral` enforces this by walking
+`policy.py`'s AST and failing if any identifier mentions a language. If someone
+later adds a `if lang == "de"` branch to the policy engine, the build breaks.
+
+The clearest demonstration is in the offline planner: with **no model at all**,
+it renders `OUTSIDE_RETURN_WINDOW` into German itself, from the structured
+fields. That is only possible because the decision and its wording were never
+the same thing.
 
 ## Architecture
 
@@ -172,16 +206,26 @@ both an order id and an email. Nobody wrote a dialogue script for collecting
 them — the schema makes the call impossible without both, so the model asks. Flow
 control through type signatures rather than prompt instructions.
 
-### What I'd change first for production
+### What I'd build next
 
-Add the **eval set** before anything else. Every safety property here is asserted
-by unit tests over deterministic code, which is exactly right for policy — but
-there is currently nothing measuring the model's half: did it pick the right
-tool, did it ask when it should have asked, did it stay grounded? Without that,
-the next prompt change is a guess. Then: real persistence (state is in-process
-today), an LLM-as-judge for tone regression, structured logging with per-turn
-cost, and server-side refusal fallbacks — omitted here to keep the demo free of
-beta API dependencies a reviewer would have to debug.
+**An eval set**, before anything else. Every safety property here is asserted by
+unit tests over deterministic code, which is exactly right for policy — but
+nothing measures the model's half: did it pick the right tool, did it ask when it
+should have asked, did it stay grounded? Without that, the next prompt change is
+a guess. Most of it could be graded deterministically, since the tool trace is
+already logged — "did it check eligibility before issuing a refund?" is an
+assertion, not a judgement call.
+
+Then **streaming replies** (answers currently arrive as a block after a pause),
+and **cost per conversation** (support is priced per contact; you cannot argue
+for AI deflection without that number).
+
+Durable sessions and German were the previous two items on this list. Both are
+built — see the sections above.
+
+Further out: a real two-way human handoff (`escalate_to_human` is still a stub
+returning a fake ticket), and moving the policy constants out of code into
+governed configuration so a CX team can change a return window without a deploy.
 
 ---
 
@@ -225,12 +269,13 @@ against a moving clock would mean the demo drifts: the order that proves the
 30-day refusal would eventually stop being 45 days old. Pinning it keeps the
 scenarios stable and the tests deterministic.
 
-**State is in-process and single-instance.** Sessions live in a module-level dict.
-Fine for a demo, wrong for production — it is the second item on the "what I'd do
-differently" list.
+**One SQLite file, one process.** Sessions are durable but the database is local
+and single-node. Correct for a demo; a real deployment wants Postgres or Redis
+behind the same four-function interface in `store.py`.
 
 **Prices in EUR, shipping copy written for Germany.** Bookly is fictional; this
-just keeps the demo internally consistent.
+just keeps the demo internally consistent. German is supported as an opt-in
+toggle; English remains the default.
 
 **No authentication on the web endpoint.** `/api/chat` is open, and the server is
 meant to run on localhost. Putting real auth in front of it would have
@@ -245,8 +290,9 @@ bookly/
   policy.py     deterministic eligibility rules
   prompts.py    system prompt (tone and judgement only)
   session.py    conversation + application state
-  data.py       mock order and help-centre backends
-  mock_llm.py   scripted planner for the no-API-key path
+  data.py       mock order and help-centre backends (EN + DE)
+  store.py      SQLite session persistence
+  mock_llm.py   scripted planner for the no-API-key path (bilingual)
 web/
   app.py        FastAPI channel adapter (SSE)
   static/       single-file chat UI, no build step

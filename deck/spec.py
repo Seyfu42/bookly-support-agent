@@ -139,6 +139,14 @@ for i, (num, title, body, accent) in enumerate(_STEPS):
              size=13.5, color=MUTED, spacing=1.3),
     ]
 
+_el3.append(
+    text(M, 6.42, 11.43, 0.52,
+         [("Conversations live in SQLite, not memory. ", {"bold": True}),
+          ("Restart the server mid-conversation and the agent still knows which "
+           "order you meant — and still refuses the refund.", {})],
+         size=14, color=MUTED)
+)
+
 S3 = {
     "bg": CREAM,
     "notes": (
@@ -150,6 +158,7 @@ S3 = {
         "Python function with an if-statement in it. Forty-five days is more than "
         "thirty, so the answer is no — and there's no way to talk the model out of "
         "it, because the model was never asked.\"\n\n"
+        "If you have a spare beat, add: \"and conversations are stored in SQLite, so this survives a server restart.\" Otherwise skip it.\n\n"
         "About twenty seconds. This is the slide that matters most."
     ),
     "el": _el3,
@@ -157,64 +166,80 @@ S3 = {
 
 
 # ---------------------------------------------------------------- Slide 4
-_CHAT_X, _CHAT_Y = M, 2.70
+_COLW = (W - 2 * M - 0.43) / 2
+_COLY, _COLH = 2.62, 2.72
 
 S4 = {
     "bg": CREAM,
     "notes": (
-        "SAY: \"Here's what that looks like to a customer. This is a real exchange "
-        "from the running agent.\"\n\n"
-        "\"The customer asks for a refund. Underneath, the agent looks the order "
-        "up and calls the eligibility check, which comes back false. So it says "
-        "no — warmly, with the reason, and it offers a human.\"\n\n"
-        "\"And if the customer pushes back and says 'come on, I'm a loyal "
-        "customer' — it still says no. I tested that.\"\n\n"
-        "About twenty seconds, then cut to the live demo."
+        "SAY: \"Same customer, same order, two languages. On the left English, on "
+        "the right German — and the agent is genuinely answering in German, not "
+        "translating a script.\"\n\n"
+        "\"Look at the bottom. That is one tool result, shared by both. "
+        "policy.py has never heard of German — it returns a code, and the code is "
+        "the same code. Language changes the wording. It cannot touch the "
+        "decision.\"\n\n"
+        "\"And if the customer pushes back — in either language — it still says "
+        "no. I tested that.\"\n\n"
+        "About twenty-five seconds, then cut to the live demo."
     ),
     "el": [
-        headline("45 days old. The answer is no — every time.", size=40, h=1.0),
-        text(M, 2.15, 11.4, 0.45, "A real exchange from the running agent.",
+        headline("Same refusal. Two languages.", size=40, h=1.0),
+        text(M, 2.05, 11.43, 0.45,
+             "Real replies from the running agent. English is the default; German is a toggle.",
              size=17, color=MUTED),
 
-        # customer bubble
-        rect(6.30, _CHAT_Y, 6.10, 0.72, GREEN, 0.16),
-        text(6.62, _CHAT_Y + 0.19, 5.46, 0.42,
-             "I want a refund for BK-1002, ada.lovelace@example.com",
-             size=13.5, color=WHITE),
+        # --- English ---------------------------------------------------------
+        rect(M, _COLY, _COLW, _COLH, WHITE, 0.10, line="DEDDD8"),
+        text(M + 0.32, _COLY + 0.24, 2.0, 0.30, "ENGLISH", size=11, color=GREEN, bold=True),
+        text(M + 0.32, _COLY + 0.60, _COLW - 0.64, 0.42,
+             "“I want a refund for BK-1002”", size=13, color=MUTED, italic=True),
+        text(M + 0.32, _COLY + 1.14, _COLW - 0.64, 1.40,
+             "BK-1002 isn't eligible for a refund — your copy of Piranesi was "
+             "delivered on 23 July, 45 days ago, which falls outside the 30-day "
+             "return window.",
+             size=14, color=INK, spacing=1.34),
 
-        # agent bubble
-        rect(_CHAT_X, _CHAT_Y + 0.95, 8.85, 1.72, WHITE, 0.16, line="DEDDD8"),
-        text(_CHAT_X + 0.34, _CHAT_Y + 1.18, 8.17, 1.30,
-             "I checked, and unfortunately BK-1002 isn't eligible for a refund — "
-             "your copy of Piranesi was delivered on 23 July, 45 days ago, which "
-             "falls outside the 30-day return window.\n"
-             "I'm sorry to give you that answer. If you'd like, I can pass this to "
-             "a human colleague to take another look.",
-             size=13.5, color=INK, spacing=1.34, space_after=6),
+        # --- German ----------------------------------------------------------
+        rect(M + _COLW + 0.43, _COLY, _COLW, _COLH, SOFT, 0.10),
+        text(M + _COLW + 0.75, _COLY + 0.24, 2.0, 0.30, "DEUTSCH", size=11, color=GREEN, bold=True),
+        text(M + _COLW + 0.75, _COLY + 0.60, _COLW - 0.64, 0.42,
+             "„Ich möchte eine Erstattung für BK-1002“", size=13, color=MUTED, italic=True),
+        text(M + _COLW + 0.75, _COLY + 1.14, _COLW - 0.64, 1.40,
+             "Leider kann ich für BK-1002 keine Erstattung veranlassen: Die "
+             "Bestellung wurde vor 45 Tagen zugestellt und liegt damit außerhalb "
+             "des 30-tägigen Rückgabefensters.",
+             size=14, color=INK, spacing=1.34),
 
-        # trace strip
-        rect(M, 5.62, 11.43, 1.12, TRACE_BG, 0.10),
-        text(M + 0.36, 5.82, 5.0, 0.30, "WHAT IT DID UNDERNEATH",
+        # --- the shared decision ---------------------------------------------
+        rect(M, 5.58, 11.43, 1.06, TRACE_BG, 0.10),
+        text(M + 0.36, 5.76, 6.0, 0.30, "ONE TOOL RESULT — SHARED BY BOTH",
              size=11, color="6B7684", bold=True),
-        text(M + 0.36, 6.16, 10.7, 0.40,
+        text(M + 0.36, 6.08, 10.7, 0.40,
              [("check_return_eligibility  →  ", {"font": MONO, "color": TRACE_INK}),
               ('"eligible": false', {"font": MONO, "bold": True, "color": "E0885F"}),
               ('   "reason": "OUTSIDE_RETURN_WINDOW"', {"font": MONO, "color": TRACE_INK})],
              size=13),
+
+        text(M, 6.86, 11.43, 0.42,
+             [("policy.py has never heard of German.", {"bold": True, "color": GREEN}),
+              (" It returns a code; turning that code into a sentence is a "
+               "presentation job.", {})],
+             size=14, color=MUTED),
     ],
 }
 
 
 # ---------------------------------------------------------------- Slide 5
 _NEXT = [
-    ("An eval set", "The rules are covered by unit tests. The model's judgement isn't measured yet — so the next prompt change would be a guess."),
-    ("Real session storage", "Conversations live in memory today. A dropped connection shouldn't lose a customer."),
+    ("An eval set", "The rules are covered by unit tests. The model's judgement isn't measured at all — so the next prompt change would be a guess."),
+    ("Streaming replies", "Answers arrive as a block after a pause. Streaming them word by word is the difference between a script and a product."),
     ("Cost per conversation", "Support is priced per contact. You can't argue for AI deflection without that number."),
 ]
 
 _el5 = [
     headline("What I'd build next.", size=40, h=1.0),
-    text(M, 2.15, 11.4, 0.45, "In order. The first one isn't close.",
+    text(M, 2.05, 11.43, 0.45, "In order. The first one isn't close.",
          size=17, color=MUTED),
 ]
 _ry = 3.05
@@ -232,6 +257,16 @@ for i, (title, body) in enumerate(_NEXT):
     ]
     _ry += 1.30
 
+# Credit what is already done. "Here is my plan" is a wish list; "I said these
+# were next and two of them are built" is follow-through.
+_el5.append(
+    text(M, 7.02, 11.43, 0.42,
+         [("Durable sessions and German were the previous two on this list. ",
+           {"bold": True, "color": GREEN}),
+          ("Both are built.", {})],
+         size=14, color=MUTED)
+)
+
 S5 = {
     "bg": CREAM,
     "notes": (
@@ -240,6 +275,9 @@ S5 = {
         "But nothing measures the model's half — did it pick the right tool, did it "
         "ask a question when it should have. Without an eval set, my next prompt "
         "change is a guess.\"\n\n"
+        "If asked why these three: the first two on this list -- durable "
+        "sessions and German -- are already built, so this is the list after "
+        "those.\n\n"
         "Then close: \"That's the agent. Let me show you it running.\"\n\n"
         "About fifteen seconds."
     ),
