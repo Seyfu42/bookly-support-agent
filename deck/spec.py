@@ -172,8 +172,8 @@ S2 = {
 # Slide 3 - Key decisions
 # --------------------------------------------------------------------------
 _CW = (W - 2 * M - 2 * 0.40) / 3
-_CY = 2.30
-_CH = 4.32
+_CY = 2.18
+_CH = 4.80
 
 _DECISIONS = [
     ("01", "Eligibility is code,\nnot a prompt",
@@ -205,19 +205,19 @@ for i, (num, title, what, traded, bought) in enumerate(_DECISIONS):
     cx = M + i * (_CW + 0.40)
     _el3 += [
         rect(cx, _CY, _CW, _CH, WHITE, 0.09, line="DEDDD8"),
-        text(cx + 0.30, _CY + 0.26, 1.0, 0.42, num,
+        text(cx + 0.30, _CY + 0.22, 1.0, 0.42, num,
              size=25, color=MOSS, font=SERIF, bold=True),
-        text(cx + 0.30, _CY + 0.72, _CW - 0.60, 0.78, title,
+        text(cx + 0.30, _CY + 0.68, _CW - 0.60, 0.78, title,
              size=19, color=INK, font=SERIF, bold=True, spacing=1.14),
-        text(cx + 0.30, _CY + 1.62, _CW - 0.60, 0.72, what,
+        text(cx + 0.30, _CY + 1.60, _CW - 0.60, 0.78, what,
              size=13, color=INK, spacing=1.26),
-        text(cx + 0.30, _CY + 2.44, _CW - 0.60, 0.24, "TRADED AWAY",
+        text(cx + 0.30, _CY + 2.56, _CW - 0.60, 0.24, "TRADED AWAY",
              size=9.5, color=CLAY, bold=True),
-        text(cx + 0.30, _CY + 2.70, _CW - 0.60, 0.42, traded,
+        text(cx + 0.30, _CY + 2.84, _CW - 0.60, 0.48, traded,
              size=12, color=MUTED, spacing=1.24),
-        text(cx + 0.30, _CY + 3.16, _CW - 0.60, 0.24, "WORTH IT BECAUSE",
+        text(cx + 0.30, _CY + 3.54, _CW - 0.60, 0.24, "WORTH IT BECAUSE",
              size=9.5, color=GREEN, bold=True),
-        text(cx + 0.30, _CY + 3.42, _CW - 0.60, 0.92, bought,
+        text(cx + 0.30, _CY + 3.82, _CW - 0.60, 0.95, bought,
              size=12, color=MUTED, spacing=1.24),
     ]
 
