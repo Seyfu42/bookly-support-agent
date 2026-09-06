@@ -72,16 +72,44 @@ def test_policy_is_language_neutral():
     machine-readable enum, so switching language changes the wording of the
     reply and nothing about the decision. If someone later adds a language
     branch to policy.py, this test should fail.
+
+    Checked against the module's *identifiers* via the AST rather than its raw
+    text -- a prose mention of the word "language" in a docstring is fine, a
+    variable called `language` is not.
     """
+    import ast
     import inspect
 
     from bookly import policy
 
-    source = inspect.getsource(policy)
-    for token in ("language", "lang", "locale", "_de", "german"):
-        assert token not in source.lower(), f"policy.py must stay language-free ({token})"
+    tree = ast.parse(inspect.getsource(policy))
+    identifiers: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Name):
+            identifiers.add(node.id)
+        elif isinstance(node, ast.Attribute):
+            identifiers.add(node.attr)
+        elif isinstance(node, ast.arg):
+            identifiers.add(node.arg)
+        elif isinstance(node, (ast.FunctionDef, ast.ClassDef)):
+            identifiers.add(node.name)
+        elif isinstance(node, (ast.Import, ast.ImportFrom)):
+            identifiers.update(a.name for a in node.names)
+            if isinstance(node, ast.ImportFrom) and node.module:
+                identifiers.add(node.module)
 
-    # Same order, same verdict, regardless of the session's language.
+    for ident in identifiers:
+        low = ident.lower()
+        for banned in ("lang", "locale", "german", "i18n", "translat"):
+            assert banned not in low, f"policy.py references '{ident}' - it must stay language-free"
+
+    # And the signature takes no language argument.
+    params = set(inspect.signature(policy.check_eligibility).parameters)
+    assert params == {"order_id", "sku"}, params
+
+
+def test_same_verdict_in_both_languages():
+    """Switching language changes the wording, never the decision."""
     from bookly.session import Session
     from bookly.tools import execute_tool
 
@@ -89,6 +117,10 @@ def test_policy_is_language_neutral():
     for lang in ("en", "de"):
         s = Session()
         s.language = lang
-        result = execute_tool("check_return_eligibility", {"order_id": "BK-1002", "sku": None}, s)
-        verdicts.append((result["eligible"], result["reason_code"], result["days_remaining"]))
+        result = execute_tool(
+            "check_return_eligibility", {"order_id": "BK-1002", "sku": None}, s
+        )
+        verdicts.append(
+            (result["eligible"], result["reason_code"], result["days_remaining"])
+        )
     assert verdicts[0] == verdicts[1] == (False, "OUTSIDE_RETURN_WINDOW", -15)
