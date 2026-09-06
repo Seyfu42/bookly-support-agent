@@ -164,6 +164,57 @@ beta API dependencies a reviewer would have to debug.
 
 ---
 
+---
+
+## Assumptions
+
+The brief said to make reasonable assumptions and document them. These are mine,
+with the reasoning, so you can tell which are considered positions and which are
+just scope.
+
+**Chat, not voice.** The brief allowed either. Chat lets the four hours go into
+agent behaviour rather than audio plumbing. The mitigation is structural rather
+than promissory: the core takes text in and returns events, and both `web/app.py`
+and `cli.py` are thin adapters over the same `run_turn()`. A voice channel is a
+third sibling, not a rewrite.
+
+**Two use cases, not five.** Order status and returns/refunds, following the
+brief's own steer toward depth. Returns is the interesting one — it is the only
+flow with a real eligibility decision, a real irreversible action, and a genuine
+reason to refuse a customer. Adding damaged-items or password-reset would have
+added surface area without adding an argument.
+
+**Identity verification is a stand-in, not a claim.** Matching an order id
+against the email on the order is enough to demonstrate *that* verification gates
+tool access, and where that gate belongs. It is not authentication. Real
+deployment puts a session token from the customer's logged-in context here, and
+the tool layer is the right place for it either way.
+
+**All backends are mocked.** Orders, the help centre and refunds are Python dicts
+in `bookly/data.py`. Each stands for a different real system — an OMS, a CMS, a
+payments service — and the agent reaches all of them only through the tool layer,
+so replacing a mock with an HTTP call changes one function body and nothing else.
+
+**Retrieval is keyword matching, not embeddings.** With five help-centre articles,
+a vector store would be theatre. The interface — a query in, cited article ids
+out — is what matters, and it is the same interface a real index would present.
+
+**"Today" is pinned to 6 September 2026** (`bookly/data.py`). Return-window maths
+against a moving clock would mean the demo drifts: the order that proves the
+30-day refusal would eventually stop being 45 days old. Pinning it keeps the
+scenarios stable and the tests deterministic.
+
+**State is in-process and single-instance.** Sessions live in a module-level dict.
+Fine for a demo, wrong for production — it is the second item on the "what I'd do
+differently" list.
+
+**Prices in EUR, shipping copy written for Germany.** Bookly is fictional; this
+just keeps the demo internally consistent.
+
+**No authentication on the web endpoint.** `/api/chat` is open, and the server is
+meant to run on localhost. Putting real auth in front of it would have
+demonstrated nothing the tool layer does not already demonstrate.
+
 ## Layout
 
 ```
