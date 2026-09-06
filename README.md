@@ -10,8 +10,10 @@ Built with the Anthropic API and a hand-written agent loop — no agent framewor
 
 ## The thesis in one line
 
-**The model decides what to *say* and which tool to *reach for*. It never decides
-what is true, what is allowed, or what moves money.**
+**The AI writes the answer. Code makes the decision.**
+
+The model chooses what to *say* and which tool to *reach for*. It never decides
+what is true, what is allowed, or what moves money.
 
 Everything below follows from that.
 

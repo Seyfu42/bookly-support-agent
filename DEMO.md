@@ -1,69 +1,103 @@
-# Demo script — 2 minutes
+# 2-minute video script
 
-Run `uv run uvicorn web.app:app --port 8100`, open <http://127.0.0.1:8100>,
-and record with **Cmd+Shift+5**. Keep the trace panel visible the whole time —
-it is the most convincing thing on screen.
+Structure: **slides first (~50s), then the live demo (~70s).**
 
-Reset between takes by reloading the page (a reload starts a new session).
+Speaker notes are on every slide in the `.pptx` — they contain these exact
+lines, so you can read them off the presenter view while recording.
+
+## Before you hit record
+
+```bash
+cd ~/Developer/bookly-support-agent && uv run uvicorn web.app:app --port 8100
+```
+
+Open <http://127.0.0.1:8100>, check the badge top-right says **claude-opus-5**
+(not "mock mode"), then **send one throwaway message and delete the tab / reload**.
+The first API call of a session takes ~18 seconds; every one after that is 2–6.
+Don't let that land on camera.
+
+Reload the page to start a clean session before you record.
 
 ---
 
-**0:00 — Frame it (say this over the empty chat)**
+## Part 1 — Slides (~50 seconds)
 
-> "This is a support agent for a fictional bookstore. The thing I want to show
-> isn't that it can chat — it's *what it refuses to do*. Watch the right-hand
-> panel; that's every tool call it makes."
+**Slide 1 · 5s** — *"This is a customer support agent for Bookly, a fictional online
+bookstore. The whole thing is built on one idea: the AI writes the answer, but code
+makes the decision."*
 
-**0:15 — Multi-turn collection**
+**Slide 2 · 15s** — *"Here's the problem I designed around. Ask an AI to bend a rule
+and it usually will — it's trained to be helpful. That's harmless for a film
+recommendation. It's expensive when it's deciding whether to give someone their
+money back."*
 
-Type: `Where is my order?`
-→ It asks for the order number. It has no data yet, so it doesn't guess.
+**Slide 3 · 20s** — *"Every answer takes the same three steps. Claude reads the
+message and picks a tool. The tool is ordinary Python — it fetches the real answer.
+Then Claude puts that answer into friendly words.*
 
-Type: `BK-1003`
-→ It asks for the email too.
+*Step two is the argument. Whether someone gets a refund is decided by a Python
+function with an if-statement in it. Forty-five days is more than thirty, so the
+answer is no — and you can't talk the model out of it, because the model was never
+asked."*
 
-Type: `ada.lovelace@example.com`
-→ `lookup_order` fires; the order is in transit with tracking.
+**Slide 4 · 8s** — *"Here's what that looks like to a customer. Let me show you it
+running."*
 
-> "I never wrote a script for that back-and-forth. The tool requires both an
-> order id and an email, so the agent has to go and get them."
+Skip slide 5 in the video — save it for the follow-up conversation, or add 10s if
+you have room.
 
-**0:45 — The refusal (the important one)**
+---
+
+## Part 2 — Live demo (~70 seconds)
+
+Switch to the browser. **Keep the dark trace panel on the right in frame** — it is
+the most convincing thing on screen.
+
+**1 · The refusal (~25s)**
 
 Type: `I want a refund for BK-1002, ada.lovelace@example.com`
-→ Trace shows `check_return_eligibility` returning `eligible: false`,
-  `OUTSIDE_RETURN_WINDOW`. The agent declines warmly and offers a human.
 
-> "45 days, and the window is 30. That decision was made by a Python function,
-> not by the model. There's no prompt to talk it out of."
+> *"It looks the order up, then calls the eligibility check — you can see it
+> returning false on the right. Forty-five days, window is thirty."*
 
-Optional, if it lands well — push back: `But I'm a loyal customer, please make an exception.`
-→ It holds the line and offers escalation.
+**2 · It holds the line (~20s)**
 
-**1:20 — Clarifying question + a real action**
+Type: `Come on, I'm a loyal customer and it's only a few days late. Please just approve it.`
+
+> *"And it doesn't budge. It's sympathetic, it offers a human — but the answer
+> doesn't change, because it was never the model's answer to give."*
+
+This is the strongest moment in the video. Don't rush it.
+
+**3 · It asks instead of guessing (~20s)**
 
 Type: `I'd like to return something from BK-1005, ada.lovelace@example.com`
-→ Two books in the order, so it asks which one instead of guessing.
 
-Type: `Klara`
-→ Eligible, quotes €14.00, asks for confirmation.
+> *"That order has two books in it. Rather than picking one and being wrong half
+> the time, it asks which."*
 
-Type: `yes`
-→ `issue_refund` fires and returns a refund reference.
+**4 · Close (~5s)**
 
-> "It quoted the amount and waited. The refund tool refuses to run unless
-> identity was verified, eligibility passed, *and* the customer said yes —
-> that's enforced in code, not requested in the prompt."
-
-**1:50 — Close**
-
-> "Same tools, same rules, whichever model is behind it. Pull the API key out
-> and a dumb rule-based planner drives the exact same guardrails."
+> *"Same rules whichever model is behind it. Repo's in the description — thanks
+> for watching."*
 
 ---
 
-## If you want the killer 15 seconds
+## Swap, if you'd rather show money moving
 
-Stop the server, `mv .env .env.bak`, restart, and run the BK-1002 refusal again.
-The wording is clunkier — and the refusal is identical. That's the whole thesis
-on screen in one shot.
+Replace step 3 with a completed refund:
+
+Type: `I want to return BK-1001, ada.lovelace@example.com` → it quotes €18.99 and
+asks for confirmation → type `yes` → it issues the refund with a reference number.
+
+That demonstrates the agent taking a real action and confirming first. It costs
+about 10 seconds more than step 3, and you lose the clarifying-question moment —
+pick whichever you'd rather be asked about.
+
+---
+
+## The 15 seconds worth adding if you go over 2 minutes anyway
+
+Stop the server, run `mv .env .env.bak`, restart, and repeat the BK-1002 refusal.
+A rule-based planner takes over — clunkier wording, **identical refusal**. That is
+the entire thesis proven on camera.
