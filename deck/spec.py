@@ -50,6 +50,11 @@ def text(x, y, w, h, body, size=16, color=INK, font=SANS, bold=False,
             "space_after": space_after}
 
 
+def arrow(x, y, w, color=MOSS):
+    """A short connector between pipeline boxes."""
+    return {"t": "arrow", "x": x, "y": y, "w": w, "color": color}
+
+
 def headline(body, size=42, color=INK, y=0.95, w=11.2, h=1.7):
     return text(M, y, w, h, body, size=size, color=color, font=SERIF,
                 bold=True, spacing=1.1)
@@ -78,88 +83,137 @@ S1 = {
 
 
 # ---------------------------------------------------------------- Slide 2
+# Architecture. The brief names four components to cover -- orchestration,
+# tools, memory and prompts -- so all four are labelled explicitly.
+_BW = (W - 2 * M - 3 * 0.30) / 4
+_BY, _BH = 2.72, 2.10
+
+
+def _box(i):
+    return M + i * (_BW + 0.30)
+
+
+_PARTS = [
+    ("PROMPTS", "System prompt", "Tone and judgement.\nNo business rules.", False),
+    ("ORCHESTRATION", "The agent loop", "Hand-written, ~60 lines.\nNo framework.", True),
+    ("TOOLS", "Five tools", "Identity checks and refund\npreconditions live here.", False),
+    ("MEMORY", "Split state", "Transcript for the model.\nFacts for the app.", False),
+]
+
+_el2 = [
+    headline("How a question becomes an answer", size=40, h=1.0),
+    text(M, 2.05, 11.43, 0.45, "Four moving parts. Only one of them guesses.",
+         size=17, color=MUTED),
+]
+for i, (label, title, body, lit) in enumerate(_PARTS):
+    bx = _box(i)
+    _el2 += [
+        rect(bx, _BY, _BW, _BH, GREEN if lit else WHITE, 0.10,
+             line=None if lit else "DEDDD8"),
+        text(bx + 0.26, _BY + 0.24, _BW - 0.52, 0.30, label,
+             size=10.5, color=MOSS, bold=True),
+        text(bx + 0.26, _BY + 0.62, _BW - 0.52, 0.40, title,
+             size=17, color=WHITE if lit else INK, font=SERIF, bold=True),
+        text(bx + 0.26, _BY + 1.16, _BW - 0.52, 0.72, body,
+             size=12.5, color=SOFT if lit else MUTED, spacing=1.3),
+    ]
+for i in range(3):
+    _el2.append(arrow(_box(i) + _BW + 0.06, _BY + _BH / 2, 0.18))
+
+_el2 += [
+    rect(M, 5.18, 11.43, 1.20, SOFT, 0.10),
+    text(M + 0.34, 5.40, 6.0, 0.30, "WHAT THE FLOW NEVER DOES", size=11,
+         color=GREEN, bold=True),
+    text(M + 0.34, 5.74, 10.75, 0.50,
+         "A customer turn enters on the left and leaves as a reply. Nothing in "
+         "between ever asks the model what the rules are.",
+         size=15, color=INK, spacing=1.3),
+    text(M, 6.62, 11.43, 0.45,
+         [("Memory is deliberately split. ", {"bold": True}),
+          ("The model sees the transcript. Whether identity was verified is held "
+           "by the application, in SQLite — the model cannot talk its way around a set.",
+           {})],
+         size=13.5, color=MUTED),
+]
+
 S2 = {
     "bg": CREAM,
     "notes": (
-        "SAY: \"Here's the problem I designed around. If you ask an AI to bend a "
-        "rule, it usually will — it's trained to be helpful. That's harmless when "
-        "it's guessing a film recommendation. It's expensive when it's deciding "
-        "whether to give someone their money back.\"\n\n"
-        "\"So I made a rule for myself: the model is never allowed to make that "
-        "decision.\"\n\nAbout fifteen seconds."
+        "SAY: \"Four components. On the left, the prompt — that only handles tone "
+        "and judgement, there are no business rules in it. Then the loop, which I "
+        "wrote by hand; it's about sixty lines and there's no framework in this "
+        "project. It picks tools. The tools are where identity checks and refund "
+        "preconditions actually live. And memory is split in two.\"\n\n"
+        "\"The line at the bottom is the one that matters: nothing in that flow "
+        "asks the model what the rules are.\"\n\n"
+        "About twenty seconds."
     ),
-    "el": [
-        headline("An AI wants to please you.\nA refund policy shouldn't."),
-        rect(M, 3.55, 5.55, 2.05, CLAY_SOFT, 0.10),
-        text(M + 0.40, 3.85, 4.75, 0.32, "A CHATBOT OPTIMISES FOR",
-             size=12, color=CLAY, bold=True),
-        text(M + 0.40, 4.30, 4.75, 1.05, "Making you happy\nright now.",
-             size=25, color=INK, font=SERIF, bold=True, spacing=1.15),
-
-        rect(M + 6.08, 3.55, 5.55, 2.05, SOFT, 0.10),
-        text(M + 6.48, 3.85, 4.75, 0.32, "A SUPPORT AGENT MUST OPTIMISE FOR",
-             size=12, color=GREEN, bold=True),
-        text(M + 6.48, 4.30, 4.75, 1.05, "Being right\nabout money.",
-             size=25, color=INK, font=SERIF, bold=True, spacing=1.15),
-
-        text(M, 6.20, 11.4, 0.45,
-             "Both matter. Only one of them can be left to a language model.",
-             size=17, color=MUTED, italic=True),
-    ],
+    "el": _el2,
 }
 
 
 # ---------------------------------------------------------------- Slide 3
-_SW = (W - 2 * M - 2 * 0.45) / 3
-_SY, _SH = 3.05, 3.05
+# Key decisions. The brief asks for 2-3, each with what was chosen, what was
+# traded away, and why it was worth it.
+_DW = (W - 2 * M - 2 * 0.42) / 3
+_DY, _DH = 2.72, 3.98
 
-_STEPS = [
-    ("1", "Claude picks a tool", "It reads the message and chooses: look up this order, check this refund, search the help pages.", GREEN),
-    ("2", "Python decides", "45 days since delivery. The window is 30. The answer is no — computed by code, not judged by the model.", CLAY),
-    ("3", "Claude replies", "It explains the outcome kindly. It is not allowed to overturn step 2, however the customer asks.", GREEN),
+_DECISIONS = [
+    ("01", "Eligibility is code,\nnot a prompt",
+     "Policy changes need a deploy, not a prompt edit.",
+     "Auditable, unit-testable, and there is no prompt to jailbreak."),
+    ("02", "The refund tool has\npreconditions",
+     "More code than a single line of instruction.",
+     "“Always confirm first” is a suggestion. This is enforced."),
+    ("03", "Required arguments\nmake the dialogue",
+     "Less freedom in how the agent phrases its way there.",
+     "Multi-turn collection with no dialogue script written."),
 ]
 
 _el3 = [
-    headline("Every answer takes the same three steps.", size=40, h=1.0),
-    text(M, 2.15, 11.4, 0.45,
-         "The middle one is the whole argument.",
+    headline("Three decisions worth defending", size=40, h=1.0),
+    text(M, 2.05, 11.43, 0.45,
+         "Each one moves authority out of the model and into code.",
          size=17, color=MUTED),
 ]
-for i, (num, title, body, accent) in enumerate(_STEPS):
-    sx = M + i * (_SW + 0.45)
-    mid = i == 1
+for i, (num, title, traded, bought) in enumerate(_DECISIONS):
+    dx = M + i * (_DW + 0.42)
     _el3 += [
-        rect(sx, _SY, _SW, _SH, SOFT if mid else WHITE, 0.10,
-             line=None if mid else "DEDDD8"),
-        text(sx + 0.34, _SY + 0.30, 1.2, 0.62, num,
-             size=34, color=accent, font=SERIF, bold=True),
-        text(sx + 0.34, _SY + 1.02, _SW - 0.68, 0.62, title,
-             size=20, color=INK, font=SERIF, bold=True, spacing=1.15),
-        text(sx + 0.34, _SY + 1.80, _SW - 0.68, 1.05, body,
-             size=13.5, color=MUTED, spacing=1.3),
+        rect(dx, _DY, _DW, _DH, WHITE, 0.10, line="DEDDD8"),
+        text(dx + 0.30, _DY + 0.26, 1.0, 0.42, num,
+             size=26, color=MOSS, font=SERIF, bold=True),
+        text(dx + 0.30, _DY + 0.76, _DW - 0.60, 0.86, title,
+             size=18, color=INK, font=SERIF, bold=True, spacing=1.16),
+        text(dx + 0.30, _DY + 1.78, _DW - 0.60, 0.26, "TRADED AWAY",
+             size=10, color=CLAY, bold=True),
+        text(dx + 0.30, _DY + 2.06, _DW - 0.60, 0.62, traded,
+             size=12.5, color=MUTED, spacing=1.28),
+        text(dx + 0.30, _DY + 2.76, _DW - 0.60, 0.26, "WORTH IT BECAUSE",
+             size=10, color=GREEN, bold=True),
+        text(dx + 0.30, _DY + 3.04, _DW - 0.60, 0.62, bought,
+             size=12.5, color=INK, spacing=1.28),
     ]
 
 _el3.append(
-    text(M, 6.42, 11.43, 0.52,
-         [("Conversations live in SQLite, not memory. ", {"bold": True}),
-          ("Restart the server mid-conversation and the agent still knows which "
-           "order you meant — and still refuses the refund.", {})],
-         size=14, color=MUTED)
+    text(M, 6.92, 11.43, 0.45,
+         [("The through-line: ", {"bold": True, "color": GREEN}),
+          ("an AI wants to please you, and a refund policy shouldn't. "
+           "Every decision above takes one more judgement away from the model.", {})],
+         size=13.5, color=MUTED)
 )
 
 S3 = {
     "bg": CREAM,
     "notes": (
-        "SAY: \"Every single answer goes through the same three steps.\"\n\n"
-        "\"Claude reads the message and picks a tool. The tool is ordinary Python "
-        "— it goes and gets the real answer. Then Claude puts that answer into "
-        "friendly words.\"\n\n"
-        "\"Step two is the argument. Whether someone gets a refund is decided by a "
-        "Python function with an if-statement in it. Forty-five days is more than "
-        "thirty, so the answer is no — and there's no way to talk the model out of "
-        "it, because the model was never asked.\"\n\n"
-        "If you have a spare beat, add: \"and conversations are stored in SQLite, so this survives a server restart.\" Otherwise skip it.\n\n"
-        "About twenty seconds. This is the slide that matters most."
+        "SAY: \"Three decisions, and the same instinct behind all of them.\"\n\n"
+        "\"An AI is trained to be helpful. Ask it to bend a rule and it usually "
+        "will. That's fine for a film recommendation and expensive when it's "
+        "deciding whether to give someone their money back. So every one of these "
+        "takes a judgement away from the model.\"\n\n"
+        "Pick ONE to tell properly - decision two is the best story: the customer "
+        "who insists, the model that wants to please, and the four unit tests that "
+        "make it not matter.\n\n"
+        "About twenty-five seconds. This is the slide they will ask about."
     ),
     "el": _el3,
 }

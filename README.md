@@ -162,7 +162,15 @@ the same thing.
 
 ## Architecture
 
+Four components. Only the first one guesses.
+
 ```
+   PROMPTS              ORCHESTRATION            TOOLS                 MEMORY
+   prompts.py     →       agent.py         →    tools.py       ←→    session.py
+   tone and             hand-written loop      identity checks       transcript for
+   judgement only       ~60 lines, no          and refund            the model, facts
+   no business rules    framework              preconditions         for the app
+
       customer turn
             │
             ▼
@@ -176,22 +184,24 @@ the same thing.
    │   tool layer     │   bookly/tools.py — where the guardrails actually live
    └────────┬─────────┘
             │
-   ┌────────┴─────────────────────────────────────┐
-   │                                              │
-   ▼                    ▼                ▼        ▼
-lookup_order    check_return_      issue_refund  search_help_center
-(verifies         eligibility      (3 hard        (grounded answers,
- id + email)    ── policy.py ──     preconditions)  cited by article id)
-                deterministic
+   ┌────────┼──────────────┬───────────────┬──────────────┬─────────────┐
+   ▼        ▼              ▼               ▼              ▼             ▼
+lookup_   check_return_  issue_refund   search_help_   set_language  escalate_
+order     eligibility    (3 hard        center         (validated,   to_human
+(verifies ── policy.py ─  preconditions) (grounded,     model asks,
+ id+email) deterministic                 cited)         app decides)
 ```
+
+A customer turn enters at the top and leaves as a reply. **Nothing in between
+ever asks the model what the rules are.**
 
 Session state (`bookly/session.py`) is deliberately split in two:
 
 - `messages` — what the model sees.
 - `verified_orders`, `eligibility_checks` — what the *application* knows.
 
-Security-relevant facts live in the second group, as plain Python. The model
-cannot talk its way around a `set`.
+Security-relevant facts live in the second group, as plain Python, and are
+persisted to SQLite. The model cannot talk its way around a `set`.
 
 ### Why a hand-written loop
 
