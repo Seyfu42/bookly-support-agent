@@ -83,8 +83,16 @@
     background: var(--accent); color: #fff; font: inherit; font-weight: 600; cursor: pointer;
   }
   button:disabled { opacity: .45; cursor: default; }
+  .langs { margin-left: auto; display: flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .langs button {
+    background: var(--panel); color: var(--muted); border: 0; border-radius: 0;
+    font-size: 12px; font-weight: 600; padding: 6px 11px; letter-spacing: .03em;
+  }
+  .langs button.on { background: var(--accent); color: #fff; }
+  .langs button:not(.on):hover { color: var(--accent); }
+
   .ghost {
-    margin-left: auto; background: transparent; color: var(--muted);
+    margin-left: 10px; background: transparent; color: var(--muted);
     border: 1px solid var(--line); font-size: 12.5px; padding: 6px 12px; font-weight: 500;
   }
   .ghost:hover { border-color: var(--accent); color: var(--accent); }
@@ -121,6 +129,10 @@
     <h1>Bookly Support</h1>
     <div class="sub">AI agent · order status, returns &amp; refunds</div>
   </div>
+  <div class="langs" id="langs" role="group" aria-label="Language">
+    <button type="button" data-lang="en" class="on">EN</button>
+    <button type="button" data-lang="de">DE</button>
+  </div>
   <button id="newchat" class="ghost" title="Start a fresh conversation">New conversation</button>
   <div class="badge" id="badge">connecting…</div>
 </header>
@@ -151,21 +163,62 @@ const badge = document.getElementById('badge');
 let sessionId = null;
 let traceStarted = false;
 
-const SUGGESTIONS = [
-  "Where is my order?",
-  "I want to return a book",
-  "I want a refund for BK-1002, ada.lovelace@example.com",
-  "How long does shipping take?",
-  "Can I speak to a human?",
-];
+const SUGGESTIONS = {
+  en: [
+    "Where is my order?",
+    "I want to return a book",
+    "I want a refund for BK-1002, ada.lovelace@example.com",
+    "How long does shipping take?",
+    "Can I speak to a human?",
+  ],
+  de: [
+    "Wo ist meine Bestellung?",
+    "Ich möchte ein Buch zurückgeben",
+    "Ich möchte eine Erstattung für BK-1002, ada.lovelace@example.com",
+    "Wie lange dauert der Versand?",
+    "Kann ich mit einem Menschen sprechen?",
+  ],
+};
 
+const PLACEHOLDER = {
+  en: "Ask about an order, a return, or shipping…",
+  de: "Fragen Sie nach einer Bestellung, Rückgabe oder zum Versand…",
+};
+
+let lang = 'en';   // English is the default and stays the default.
 const chips = document.getElementById('chips');
-SUGGESTIONS.forEach(s => {
-  const b = document.createElement('button');
-  b.type = 'button'; b.className = 'chip'; b.textContent = s;
-  b.onclick = () => { input.value = s; form.requestSubmit(); };
-  chips.appendChild(b);
+
+function renderChips() {
+  chips.innerHTML = '';
+  SUGGESTIONS[lang].forEach(s => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'chip'; b.textContent = s;
+    b.onclick = () => { input.value = s; form.requestSubmit(); };
+    chips.appendChild(b);
+  });
+  input.placeholder = PLACEHOLDER[lang];
+}
+
+document.querySelectorAll('#langs button').forEach(btn => {
+  btn.onclick = () => {
+    lang = btn.dataset.lang;
+    document.querySelectorAll('#langs button').forEach(b => b.classList.toggle('on', b === btn));
+    renderChips();
+    // Only restyle the greeting while nothing has been said yet — never rewrite
+    // a conversation that already happened.
+    const bubbles = log.querySelectorAll('.msg');
+    if (bubbles.length === 1 && bubbles[0].classList.contains('bot')) {
+      bubbles[0].textContent = GREETING[lang];
+    }
+    try { localStorage.setItem('bookly_lang', lang); } catch (e) {}
+  };
 });
+
+try {
+  const savedLang = localStorage.getItem('bookly_lang');
+  if (savedLang === 'de') document.querySelector('#langs button[data-lang="de"]').click();
+  else renderChips();
+} catch (e) { renderChips(); }
 
 fetch('/api/config').then(r => r.json()).then(c => {
   if (c.mock_mode) { badge.textContent = 'mock mode'; badge.classList.add('mock'); }
@@ -225,7 +278,7 @@ form.onsubmit = async (e) => {
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: text, session_id: sessionId }),
+      body: JSON.stringify({ message: text, session_id: sessionId, language: lang }),
     });
     const reader = res.body.getReader();
     const dec = new TextDecoder();
@@ -276,7 +329,10 @@ input.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
 });
 
-const GREETING = "Hi! I'm the Bookly support assistant. I can check an order, help with a return, or answer questions about shipping and our policies. What can I do for you?";
+const GREETING = {
+  en: "Hi! I'm the Bookly support assistant. I can check an order, help with a return, or answer questions about shipping and our policies. What can I do for you?",
+  de: "Hallo! Ich bin der Bookly-Support-Assistent. Ich kann eine Bestellung prüfen, bei einer Rückgabe helfen oder Fragen zu Versand und Richtlinien beantworten. Was kann ich für Sie tun?",
+};
 
 document.getElementById('newchat').onclick = () => {
   try { localStorage.removeItem('bookly_session'); } catch (e) {}
@@ -288,15 +344,15 @@ document.getElementById('newchat').onclick = () => {
 async function restore() {
   let saved = null;
   try { saved = localStorage.getItem('bookly_session'); } catch (e) {}
-  if (!saved) { bubble(GREETING, 'bot'); input.focus(); return; }
+  if (!saved) { bubble(GREETING[lang], 'bot'); input.focus(); return; }
 
   try {
     const res = await fetch('/api/session/' + encodeURIComponent(saved));
     const data = await res.json();
-    if (!data.found || !data.transcript.length) { bubble(GREETING, 'bot'); input.focus(); return; }
+    if (!data.found || !data.transcript.length) { bubble(GREETING[lang], 'bot'); input.focus(); return; }
 
     sessionId = data.session_id;
-    bubble(GREETING, 'bot');
+    bubble(GREETING[lang], 'bot');
     data.transcript.forEach(m => bubble(m.text, m.role === 'user' ? 'you' : 'bot'));
 
     data.trace.forEach(t => {
@@ -313,7 +369,7 @@ async function restore() {
     log.appendChild(note);
     log.scrollTop = log.scrollHeight;
   } catch (e) {
-    bubble(GREETING, 'bot');
+    bubble(GREETING[lang], 'bot');
   }
   input.focus();
 }

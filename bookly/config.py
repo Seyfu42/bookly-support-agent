@@ -15,6 +15,13 @@ MODEL = os.getenv("BOOKLY_MODEL", "claude-opus-5")
 # read a result, phrase a reply), so "high" (the API default) buys nothing but wall time.
 EFFORT = os.getenv("BOOKLY_EFFORT", "medium")
 
+# Language is opt-in. English is the default and stays the default; a customer
+# (or the UI toggle) can switch a single conversation to German. Note what this
+# does NOT touch: the policy engine. `reason_code` is a machine-readable enum,
+# so the decision is language-neutral by construction and only the wording moves.
+DEFAULT_LANGUAGE = os.getenv("BOOKLY_LANGUAGE", "en")
+SUPPORTED_LANGUAGES = ("en", "de")
+
 MAX_TOKENS = 4096
 
 # Safety valve: a runaway tool loop is the classic way an agent burns a customer's

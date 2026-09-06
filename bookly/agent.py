@@ -17,7 +17,7 @@ from collections.abc import Iterator
 import anthropic
 
 from bookly import config
-from bookly.prompts import SYSTEM_PROMPT
+from bookly.prompts import system_prompt
 from bookly.session import Session
 from bookly.tools import TOOL_SCHEMAS, execute_tool
 
@@ -35,7 +35,7 @@ def _call_model(session: Session):
     return _get_client().messages.create(
         model=config.MODEL,
         max_tokens=config.MAX_TOKENS,
-        system=SYSTEM_PROMPT,
+        system=system_prompt(session.language),
         tools=TOOL_SCHEMAS,
         messages=session.messages,
         # Thinking runs adaptively by default on Opus 5. Effort is turned down

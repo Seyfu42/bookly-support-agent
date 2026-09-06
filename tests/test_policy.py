@@ -63,3 +63,32 @@ def test_second_refund_is_refused():
     first = execute_tool("issue_refund", {"order_id": "BK-1001", "customer_confirmed": True}, session)
     assert first["success"] and not first["already_refunded"]
     assert check_eligibility("BK-1001").reason_code == "ALREADY_REFUNDED"
+
+
+def test_policy_is_language_neutral():
+    """The rule must not know or care what language the conversation is in.
+
+    This is the whole point of the German feature: `reason_code` is a
+    machine-readable enum, so switching language changes the wording of the
+    reply and nothing about the decision. If someone later adds a language
+    branch to policy.py, this test should fail.
+    """
+    import inspect
+
+    from bookly import policy
+
+    source = inspect.getsource(policy)
+    for token in ("language", "lang", "locale", "_de", "german"):
+        assert token not in source.lower(), f"policy.py must stay language-free ({token})"
+
+    # Same order, same verdict, regardless of the session's language.
+    from bookly.session import Session
+    from bookly.tools import execute_tool
+
+    verdicts = []
+    for lang in ("en", "de"):
+        s = Session()
+        s.language = lang
+        result = execute_tool("check_return_eligibility", {"order_id": "BK-1002", "sku": None}, s)
+        verdicts.append((result["eligible"], result["reason_code"], result["days_remaining"]))
+    assert verdicts[0] == verdicts[1] == (False, "OUTSIDE_RETURN_WINDOW", -15)

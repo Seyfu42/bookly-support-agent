@@ -171,17 +171,27 @@ def _lookup_order(args: dict, session) -> dict:
 def _search_help_center(args: dict, session) -> dict:
     query = (args.get("query") or "").lower()
     terms = {t.strip(".,?!") for t in query.split() if len(t) > 2}
+    lang = getattr(session, "language", "en")
 
+    # Match against both keyword sets regardless of conversation language: a
+    # German speaker may well type an English word, and vice versa. Only the
+    # article *body* we hand back is language-specific.
     scored = []
     for article in ARTICLES:
-        score = sum(1 for kw in article["keywords"] if kw in query)
-        score += sum(1 for kw in article["keywords"] for t in terms if t in kw)
+        keywords = article["keywords"] + article.get("keywords_de", [])
+        score = sum(1 for kw in keywords if kw in query)
+        score += sum(1 for kw in keywords for t in terms if t in kw)
         if score:
             scored.append((score, article))
 
     scored.sort(key=lambda pair: pair[0], reverse=True)
+    body_key, title_key = ("body_de", "title_de") if lang == "de" else ("body", "title")
     hits = [
-        {"id": a["id"], "title": a["title"], "body": a["body"]}
+        {
+            "id": a["id"],
+            "title": a.get(title_key) or a["title"],
+            "body": a.get(body_key) or a["body"],
+        }
         for _, a in scored[:3]
     ]
     if not hits:

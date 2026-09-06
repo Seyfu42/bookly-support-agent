@@ -25,6 +25,7 @@ STATIC = Path(__file__).parent / "static"
 class ChatRequest(BaseModel):
     message: str
     session_id: str | None = None
+    language: str | None = None
 
 
 @app.get("/")
@@ -38,6 +39,8 @@ def get_config() -> dict:
         "mock_mode": config.MOCK_MODE,
         "model": None if config.MOCK_MODE else config.MODEL,
         "storage": store.stats(),
+        "default_language": config.DEFAULT_LANGUAGE,
+        "languages": list(config.SUPPORTED_LANGUAGES),
     }
 
 
@@ -64,6 +67,8 @@ def get_session_transcript(session_id: str) -> dict:
 def chat(req: ChatRequest) -> StreamingResponse:
     """Stream agent events as server-sent events so the trace panel fills live."""
     session = get_session(req.session_id)
+    if req.language in config.SUPPORTED_LANGUAGES:
+        session.language = req.language
 
     def stream():
         yield f"data: {json.dumps({'type': 'session', 'session_id': session.session_id})}\n\n"

@@ -18,7 +18,7 @@ import uuid
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
-from bookly import store
+from bookly import config, store
 from bookly.policy import EligibilityResult
 
 
@@ -48,6 +48,10 @@ class Session:
     eligibility_checks: dict[str, Any] = field(default_factory=dict)
     escalated: bool = False
 
+    # Presentation language for this conversation. Opt-in; English by default.
+    # Deliberately NOT consulted by policy.py or the refund gate.
+    language: str = field(default_factory=lambda: config.DEFAULT_LANGUAGE)
+
     # Working memory for the scripted fallback planner (see mock_llm.py).
     scratch: dict = field(default_factory=dict)
 
@@ -76,6 +80,7 @@ class Session:
                 k: asdict(v) for k, v in self.eligibility_checks.items()
             },
             "escalated": self.escalated,
+            "language": self.language,
             "scratch": self.scratch,
             "trace": [asdict(t) for t in self.trace],
             "turn_count": self.turn_count,
@@ -93,6 +98,7 @@ class Session:
                 for k, v in p.get("eligibility_checks", {}).items()
             },
             escalated=p.get("escalated", False),
+            language=p.get("language", config.DEFAULT_LANGUAGE),
             scratch=p.get("scratch", {}),
             trace=[TraceEntry(**t) for t in p.get("trace", [])],
             turn_count=p.get("turn_count", 0),

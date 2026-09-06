@@ -167,6 +167,11 @@ ARTICLES = [
             "method. Return shipping is free within the EU. Ebooks and audiobooks are "
             "non-returnable once the download link has been issued."
         ),
+        "keywords_de": ["rueckgabe", "rückgabe", "zurueck", "zurück", "retoure", "erstattung", "widerruf", "zurückschicken"],
+        "title_de": "Rückgabe und Erstattung",
+        "body_de": (
+            "Physische Bücher können innerhalb von 30 Tagen nach Zustellung zurückgegeben werden, sofern sie in wiederverkaufsfähigem Zustand sind. Die Erstattung erfolgt auf das ursprüngliche Zahlungsmittel. Der Rückversand innerhalb der EU ist kostenlos. E-Books und Hörbücher sind vom Umtausch ausgeschlossen, sobald der Download-Link versendet wurde."
+        ),
     },
     {
         "id": "HC-REFUNDS-02",
@@ -177,6 +182,11 @@ ARTICLES = [
             "method within 5-7 business days. Your bank may take an additional 2-3 "
             "days to display it."
         ),
+        "keywords_de": ["erstattung", "geld", "zurueck", "zurück", "dauer", "wie lange", "ueberweisung"],
+        "title_de": "Wann erhalte ich mein Geld zurück?",
+        "body_de": (
+            "Sobald eine Rücksendung genehmigt ist, wird die Erstattung innerhalb von 5 bis 7 Werktagen auf das ursprüngliche Zahlungsmittel gutgeschrieben. Ihre Bank kann zusätzlich 2 bis 3 Tage benötigen, bis der Betrag sichtbar ist."
+        ),
     },
     {
         "id": "HC-SHIPPING-03",
@@ -186,6 +196,11 @@ ARTICLES = [
             "Standard shipping within Germany takes 2-4 business days and is free on "
             "orders over EUR 20. Elsewhere in the EU takes 4-7 business days. Express "
             "shipping is next business day if ordered before 14:00 CET."
+        ),
+        "keywords_de": ["versand", "lieferung", "lieferzeit", "wie lange", "kosten", "porto", "zustellung"],
+        "title_de": "Versandzeiten und Kosten",
+        "body_de": (
+            "Der Standardversand innerhalb Deutschlands dauert 2 bis 4 Werktage und ist ab einem Bestellwert von 20 EUR kostenlos. In die übrige EU dauert es 4 bis 7 Werktage. Expressversand erfolgt am nächsten Werktag, wenn Sie vor 14:00 Uhr MEZ bestellen."
         ),
     },
     {
@@ -198,6 +213,11 @@ ARTICLES = [
             "separately from the standard return flow and is not subject to the "
             "30-day return window."
         ),
+        "keywords_de": ["beschaedigt", "beschädigt", "kaputt", "falsch", "defekt", "fehlt", "zerrissen"],
+        "title_de": "Beschädigter oder falscher Artikel",
+        "body_de": (
+            "Melden Sie beschädigte oder falsche Artikel innerhalb von 14 Tagen nach Zustellung. Wir senden kostenlos Ersatz und Sie behalten das beschädigte Exemplar. Dieser Fall wird getrennt von der normalen Rücksendung behandelt und unterliegt nicht der 30-Tage-Frist."
+        ),
     },
     {
         "id": "HC-PASSWORD-05",
@@ -207,6 +227,11 @@ ARTICLES = [
             "Use the 'Forgot password' link on the sign-in page. The reset email "
             "arrives within a few minutes and the link is valid for 60 minutes. "
             "Support staff cannot reset a password on your behalf."
+        ),
+        "keywords_de": ["passwort", "kennwort", "zuruecksetzen", "zurücksetzen", "anmelden", "login", "konto"],
+        "title_de": "Passwort zurücksetzen",
+        "body_de": (
+            "Nutzen Sie den Link „Passwort vergessen“ auf der Anmeldeseite. Die E-Mail trifft innerhalb weniger Minuten ein und der Link ist 60 Minuten gültig. Der Support kann Ihr Passwort nicht für Sie zurücksetzen."
         ),
     },
 ]

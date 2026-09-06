@@ -49,3 +49,29 @@ Warm, brief, human. Two or three sentences is usually right. No corporate \
 padding, no apologising twice, no bulleted lists in the middle of a chat. Use \
 the customer's own words for their problem. Today is 6 September 2026.\
 """
+
+
+# Language is a presentation concern, so it lives here in the prompt layer and
+# nowhere else. Nothing in policy.py or tools.py knows what language a
+# conversation is in -- which is exactly the point being demonstrated: the rule
+# that a return closes after 30 days is the same rule in every language.
+
+_LANGUAGE_DIRECTIVE = {
+    "en": "",
+    "de": (
+        "\n\n## Sprache\n\n"
+        "Antworte auf Deutsch. Duze die Kundin oder den Kunden nicht -- verwende "
+        "die Sie-Form, wie es im deutschen Kundenservice ueblich ist. Bleib dabei "
+        "warm und kurz.\n\n"
+        "Werkzeuge geben ihre Ergebnisse auf Englisch zurueck. Uebersetze den "
+        "Inhalt fuer die Antwort, aber aendere ihn nicht: Betraege, Daten, "
+        "Bestellnummern und vor allem Entscheidungen bleiben exakt so, wie das "
+        "Werkzeug sie geliefert hat. Wenn check_return_eligibility 'eligible: "
+        "false' meldet, ist die Antwort auch auf Deutsch nein."
+    ),
+}
+
+
+def system_prompt(language: str = "en") -> str:
+    """The system prompt for a conversation in the given language."""
+    return SYSTEM_PROMPT + _LANGUAGE_DIRECTIVE.get(language, "")
