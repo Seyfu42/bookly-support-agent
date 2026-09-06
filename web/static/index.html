@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Bookly Support</title>
+<style>
+  :root {
+    --bg: #f6f5f3;
+    --panel: #ffffff;
+    --ink: #1a1a1a;
+    --muted: #6b6b6b;
+    --line: #e3e1dd;
+    --accent: #1f5f4f;
+    --accent-soft: #e8f0ed;
+    --trace-bg: #14161a;
+    --trace-ink: #d7dce3;
+    --trace-key: #7fd1b9;
+    --trace-muted: #6b7684;
+    --warn: #a4552b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 22px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+    flex: none;
+  }
+  .logo {
+    width: 30px; height: 30px; border-radius: 7px;
+    background: var(--accent); color: #fff;
+    display: grid; place-items: center;
+    font-weight: 700; font-size: 15px;
+  }
+  h1 { font-size: 15px; margin: 0; font-weight: 600; letter-spacing: -0.01em; }
+  .sub { font-size: 12.5px; color: var(--muted); }
+  .badge {
+    margin-left: auto; font-size: 11.5px; letter-spacing: .04em;
+    text-transform: uppercase; padding: 4px 10px; border-radius: 999px;
+    background: var(--accent-soft); color: var(--accent); font-weight: 600;
+  }
+  .badge.mock { background: #f3ece0; color: var(--warn); }
+
+  main { flex: 1; display: grid; grid-template-columns: 1fr 400px; min-height: 0; }
+
+  /* --- chat --- */
+  .chat { display: flex; flex-direction: column; min-height: 0; }
+  #log { flex: 1; overflow-y: auto; padding: 26px 28px; display: flex; flex-direction: column; gap: 14px; }
+  .msg { max-width: 70%; padding: 11px 15px; border-radius: 15px; white-space: pre-wrap; }
+  .msg.bot { background: var(--panel); border: 1px solid var(--line); border-bottom-left-radius: 5px; align-self: flex-start; }
+  .msg.you { background: var(--accent); color: #fff; border-bottom-right-radius: 5px; align-self: flex-end; }
+  .msg.err { background: #fdf0ea; border: 1px solid #edc9b6; color: var(--warn); align-self: flex-start; font-size: 13.5px; }
+  .typing { display: flex; gap: 4px; padding: 14px 16px; align-self: flex-start; }
+  .typing i { width: 6px; height: 6px; border-radius: 50%; background: #b9b7b2; animation: b 1.2s infinite; }
+  .typing i:nth-child(2) { animation-delay: .18s } .typing i:nth-child(3) { animation-delay: .36s }
+  @keyframes b { 0%,60%,100%{opacity:.3;transform:translateY(0)} 30%{opacity:1;transform:translateY(-3px)} }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 7px; padding: 0 28px 12px; }
+  .chip {
+    font-size: 12.5px; padding: 6px 12px; border-radius: 999px; cursor: pointer;
+    background: var(--panel); border: 1px solid var(--line); color: var(--muted);
+  }
+  .chip:hover { border-color: var(--accent); color: var(--accent); }
+
+  form { display: flex; gap: 10px; padding: 14px 28px 20px; border-top: 1px solid var(--line); background: var(--panel); }
+  input[type=text] {
+    flex: 1; padding: 11px 15px; border-radius: 10px;
+    border: 1px solid var(--line); font: inherit; background: var(--bg);
+  }
+  input[type=text]:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+  button {
+    padding: 11px 20px; border-radius: 10px; border: 0;
+    background: var(--accent); color: #fff; font: inherit; font-weight: 600; cursor: pointer;
+  }
+  button:disabled { opacity: .45; cursor: default; }
+
+  /* --- trace --- */
+  .trace { background: var(--trace-bg); color: var(--trace-ink); display: flex; flex-direction: column; min-height: 0; }
+  .trace h2 {
+    font-size: 11.5px; text-transform: uppercase; letter-spacing: .07em;
+    color: var(--trace-muted); margin: 0; padding: 16px 20px 10px; font-weight: 600;
+    border-bottom: 1px solid #23262c;
+  }
+  #trace { flex: 1; overflow-y: auto; padding: 14px 18px 24px; font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .t-empty { color: var(--trace-muted); font-style: italic; }
+  .step { margin-bottom: 13px; border-left: 2px solid #2c313a; padding-left: 11px; }
+  .step .name { color: var(--trace-key); font-weight: 600; }
+  .step .arrow { color: var(--trace-muted); }
+  .step pre { margin: 4px 0 0; white-space: pre-wrap; word-break: break-word; color: #aab3c0; }
+  .step.res pre { color: #8f9bab; }
+  .step.deny .name { color: #e0885f; }
+  .turn-sep { color: var(--trace-muted); margin: 16px 0 10px; font-size: 11px; letter-spacing: .05em; }
+
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } .trace { display: none; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">B</div>
+  <div>
+    <h1>Bookly Support</h1>
+    <div class="sub">AI agent · order status, returns &amp; refunds</div>
+  </div>
+  <div class="badge" id="badge">connecting…</div>
+</header>
+
+<main>
+  <section class="chat">
+    <div id="log"></div>
+    <div class="chips" id="chips"></div>
+    <form id="form">
+      <input type="text" id="input" placeholder="Ask about an order, a return, or shipping…" autocomplete="off" />
+      <button id="send">Send</button>
+    </form>
+  </section>
+
+  <aside class="trace">
+    <h2>Agent trace — what it actually did</h2>
+    <div id="trace"><div class="t-empty">Tool calls will appear here as the agent works.</div></div>
+  </aside>
+</main>
+
+<script>
+const log = document.getElementById('log');
+const traceEl = document.getElementById('trace');
+const form = document.getElementById('form');
+const input = document.getElementById('input');
+const sendBtn = document.getElementById('send');
+const badge = document.getElementById('badge');
+let sessionId = null;
+let traceStarted = false;
+
+const SUGGESTIONS = [
+  "Where is my order?",
+  "I want to return a book",
+  "I want a refund for BK-1002, ada.lovelace@example.com",
+  "How long does shipping take?",
+  "Can I speak to a human?",
+];
+
+const chips = document.getElementById('chips');
+SUGGESTIONS.forEach(s => {
+  const b = document.createElement('button');
+  b.type = 'button'; b.className = 'chip'; b.textContent = s;
+  b.onclick = () => { input.value = s; form.requestSubmit(); };
+  chips.appendChild(b);
+});
+
+fetch('/api/config').then(r => r.json()).then(c => {
+  if (c.mock_mode) { badge.textContent = 'mock mode'; badge.classList.add('mock'); }
+  else { badge.textContent = c.model; }
+}).catch(() => { badge.textContent = 'offline'; });
+
+function bubble(text, cls) {
+  const d = document.createElement('div');
+  d.className = 'msg ' + cls;
+  d.textContent = text;
+  log.appendChild(d);
+  log.scrollTop = log.scrollHeight;
+  return d;
+}
+
+function typing() {
+  const d = document.createElement('div');
+  d.className = 'typing';
+  d.innerHTML = '<i></i><i></i><i></i>';
+  log.appendChild(d);
+  log.scrollTop = log.scrollHeight;
+  return d;
+}
+
+function traceStep(kind, name, payload, denied) {
+  if (!traceStarted) { traceEl.innerHTML = ''; traceStarted = true; }
+  const d = document.createElement('div');
+  d.className = 'step' + (kind === 'res' ? ' res' : '') + (denied ? ' deny' : '');
+  const arrow = kind === 'call' ? '→' : '←';
+  d.innerHTML = `<span class="arrow">${arrow}</span> <span class="name">${name}</span>`;
+  const pre = document.createElement('pre');
+  pre.textContent = JSON.stringify(payload, null, 1);
+  d.appendChild(pre);
+  traceEl.appendChild(d);
+  traceEl.scrollTop = traceEl.scrollHeight;
+}
+
+function traceTurn(text) {
+  if (!traceStarted) { traceEl.innerHTML = ''; traceStarted = true; }
+  const d = document.createElement('div');
+  d.className = 'turn-sep';
+  d.textContent = '— turn: ' + (text.length > 42 ? text.slice(0, 42) + '…' : text);
+  traceEl.appendChild(d);
+}
+
+form.onsubmit = async (e) => {
+  e.preventDefault();
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  sendBtn.disabled = true;
+  bubble(text, 'you');
+  traceTurn(text);
+  const dots = typing();
+
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text, session_id: sessionId }),
+    });
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '';
+    let firstReply = true;
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      const parts = buf.split('\n\n');
+      buf = parts.pop();
+
+      for (const part of parts) {
+        if (!part.startsWith('data: ')) continue;
+        const ev = JSON.parse(part.slice(6));
+
+        if (ev.type === 'session') sessionId = ev.session_id;
+        else if (ev.type === 'tool_call') traceStep('call', ev.name, ev.args);
+        else if (ev.type === 'tool_result') {
+          const denied = ev.result && (ev.result.error || ev.result.eligible === false || ev.result.success === false);
+          traceStep('res', ev.name, ev.result, denied);
+        }
+        else if (ev.type === 'partial' || ev.type === 'reply') {
+          if (firstReply) { dots.remove(); firstReply = false; }
+          bubble(ev.text, 'bot');
+        }
+        else if (ev.type === 'error') {
+          if (firstReply) { dots.remove(); firstReply = false; }
+          bubble(ev.message, 'err');
+        }
+      }
+    }
+    dots.remove();
+  } catch (err) {
+    dots.remove();
+    bubble('Connection to the agent failed: ' + err.message, 'err');
+  }
+  sendBtn.disabled = false;
+  input.focus();
+};
+
+// Some browsers don't fire implicit form submission reliably; be explicit.
+input.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
+});
+
+bubble("Hi! I'm the Bookly support assistant. I can check an order, help with a return, or answer questions about shipping and our policies. What can I do for you?", 'bot');
+input.focus();
+</script>
+</body>
+</html>
