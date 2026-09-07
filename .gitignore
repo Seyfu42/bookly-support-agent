@@ -14,3 +14,6 @@ bookly_sessions.db*
 # Personal recording script — kept local, not shared
 DEMO.md
 recording-script.pdf
+
+# Office lock files
+~$*
