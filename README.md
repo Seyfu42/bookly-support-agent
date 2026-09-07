@@ -168,14 +168,14 @@ Four components. Only the first one guesses.
    PROMPTS              ORCHESTRATION            TOOLS                 MEMORY
    prompts.py     →       agent.py         →    tools.py       ←→    session.py
    tone and             hand-written loop      identity checks       transcript for
-   judgement only       ~60 lines, no          and refund            the model, facts
-   no business rules    framework              preconditions         for the app
+   behaviour only       under 100 lines,      and refund            the model, facts
+   no business rules    no framework           preconditions         for the app
 
       customer turn
             │
             ▼
    ┌──────────────────┐
-   │   agent loop     │   bookly/agent.py — hand-written, ~60 lines
+   │   agent loop     │   bookly/agent.py — hand-written, under 100 lines
    │  (while tool_use)│   iteration cap · error surfacing · trace events
    └────────┬─────────┘
             │  Claude Opus 5 + tool schemas + system prompt

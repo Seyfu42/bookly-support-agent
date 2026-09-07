@@ -94,8 +94,8 @@ def _box(i):
 
 
 _PARTS = [
-    ("PROMPTS", "System prompt", "Tone and judgement.\nNo business rules.", False),
-    ("ORCHESTRATION", "The agent loop", "Hand-written, ~60 lines.\nNo framework.", True),
+    ("PROMPTS", "System prompt", "Tone and behaviour.\nNo business rules.", False),
+    ("ORCHESTRATION", "The agent loop", "Hand-written, under 100\nlines. No framework.", True),
     ("TOOLS", "Five tools", "Identity checks and refund\npreconditions live here.", False),
     ("MEMORY", "Split state", "Transcript for the model.\nFacts for the app.", False),
 ]
@@ -139,13 +139,16 @@ _el2 += [
 S2 = {
     "bg": CREAM,
     "notes": (
-        "SAY: \"Four components. On the left, the prompt — that only handles tone "
-        "and judgement, there are no business rules in it. Then the loop, which I "
-        "wrote by hand; it's about sixty lines and there's no framework in this "
-        "project. It picks tools. The tools are where identity checks and refund "
-        "preconditions actually live. And memory is split in two.\"\n\n"
-        "\"The line at the bottom is the one that matters: nothing in that flow "
-        "asks the model what the rules are.\"\n\n"
+        "SAY: \"The architecture has four parts. The system prompt handles tone "
+        "and behaviour, how to talk to the customer, when to ask instead of "
+        "guessing. There are no business rules in it at all.\"\n\n"
+        "\"The agent loop is hand-written, under a hundred lines, and it handles "
+        "the orchestration between the parts. The tools are where the guardrails "
+        "actually sit, like identity checks and the refund preconditions. And the "
+        "memory is split in two: the model gets the transcript, anything security "
+        "relevant stays on the application side.\"\n\n"
+        "\"The most important part is that nothing here asks the model what the "
+        "rules are.\"\n\n"
         "About twenty seconds."
     ),
     "el": _el2,
@@ -205,14 +208,21 @@ _el3.append(
 S3 = {
     "bg": CREAM,
     "notes": (
-        "SAY: \"Three decisions, and the same instinct behind all of them.\"\n\n"
-        "\"An AI is trained to be helpful. Ask it to bend a rule and it usually "
-        "will. That's fine for a film recommendation and expensive when it's "
-        "deciding whether to give someone their money back. So every one of these "
-        "takes a judgement away from the model.\"\n\n"
-        "Pick ONE to tell properly - decision two is the best story: the customer "
-        "who insists, the model that wants to please, and the four unit tests that "
-        "make it not matter.\n\n"
+        "SAY: \"I made three design decisions, and each one moves authority out "
+        "of the model and into the code.\"\n\n"
+        "1 - Eligibility lives in the code, not the prompt. A policy change needs "
+        "a deploy instead of a quick prompt edit. In return I can audit it, I can "
+        "unit-test it, and there is no prompt for anyone to jailbreak.\n\n"
+        "2 - The refund tool does not trust the model. Before it moves money it "
+        "checks two things itself: that we really verified the order against the "
+        "customer's email, and that the eligibility check came back positive. If "
+        "one is missing it refuses, even when the model asks it to go ahead.\n\n"
+        "3 - The required arguments create the dialogue. I never wrote a "
+        "conversation script; the tool cannot be called without an order number "
+        "and an email, so the agent has to collect them first.\n\n"
+        "Close with: the reason behind all three is the same. A model is trained "
+        "to be helpful, so it will always try to find a way to say yes, and when "
+        "it comes to money that becomes a problem.\n\n"
         "About twenty-five seconds. This is the slide they will ask about."
     ),
     "el": _el3,

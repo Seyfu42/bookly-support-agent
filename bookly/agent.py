@@ -2,7 +2,7 @@
 
 Written by hand rather than with a framework. The assignment asks to see the
 orchestration, and there is a real argument for it beyond that: this loop is
-~60 lines, and every one of them is a place where a support agent needs a
+under 100 lines, and every one of them is a place where a support agent needs a
 policy hook -- iteration caps, tool gating, trace emission, error surfacing.
 Frameworks put those behind a callback API. Here they are just code.
 
